@@ -21,17 +21,20 @@ fi
 # Check if submodules are populated by looking for a key file in each submodule
 if [[ ! -f "lib/sokol/sokol_app.h" || ! -f "lib/cglm/cglm.h" || ! -f "lib/dcimgui/src/cimgui.h" ]]; then
     echo "Submodules not initialized. Initializing and updating git submodules..."
-    git submodule init
-    git submodule update
+    git submodule update --init --recursive
 fi
 
 # Determine the number of CPU cores based on the OS
 get_num_cores() {
     case "$OS" in
-        Linux) NUMCORES=$(nproc) ;;
-        Darwin) NUMCORES=$(sysctl -n hw.ncpu) ;;
+        Linux) NUMCORES=$(nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4) ;;
+        Darwin) NUMCORES=$(sysctl -n hw.ncpu 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4) ;;
         *) echo "Unsupported OS: $OS" && return 1 ;;
     esac
+
+    if [[ -z "${NUMCORES:-}" ]]; then
+        NUMCORES=4
+    fi
 }
 
 get_num_cores
